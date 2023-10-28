@@ -1,19 +1,21 @@
 # IOCP
 winsock2 with IOCP.  
 
-Socket 프로그래밍에 관한 공부내용을 담은 레포지토리입니다.
-
 This repository contains study materials related to socket programming with Winsock2 and IOCP
 
 ## server Project
 
 - **multiPlexing_echo.cpp**: A multiplexing echo server.
 - **op_*_window.cpp**: Calculator implemented as a server-client structure.
+- **proxyserver.cpp**:  Implemented a simple proxy server using sockets.
+- **webserver.cpp**: Implemented a basic HTTP web server using sockets.
+- **WorkerThread.cpp**: Thread study
+- **echo_client.cpp**: echo client used for studying IOCP.
 
 ## socket Project
 
 - Basic IOCP structure for an Echo Server.
-- 공부하면서 간단히 만든 녀석.
+- A project for studying IOCP that not only handles echo but also synchronizes coordinates of dummy clients. 
 
 ## tutorial4 Project(작성중)
 

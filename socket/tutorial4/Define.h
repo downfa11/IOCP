@@ -12,7 +12,7 @@ enum class IOOperation {
 
 struct OverlappedEx {
 	WSAOVERLAPPED m_wsaOverlapped;
-	SOCKET m_clisock;
-	WSABUF m_wsaBuf;
+	SOCKET m_clisock; // 클라이언트의 소켓
+	WSABUF m_wsaBuf; // Overlapped I/O 소켓 버퍼
 	IOOperation m_Operation;
 };

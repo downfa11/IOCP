@@ -72,7 +72,7 @@ public:
 	}
 	
 
-	bool SendMessage(const int dataSize_, char* message) {
+	bool SendMsg(const int dataSize_, char* message) {
 		auto SendOverlappedEx = new OverlappedEx;
 		ZeroMemory(SendOverlappedEx, sizeof(OverlappedEx));
 		SendOverlappedEx->m_wsaBuf.len = dataSize_;

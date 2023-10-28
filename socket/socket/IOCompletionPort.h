@@ -5,6 +5,7 @@
 #include<iostream>
 #include<thread>
 #include<vector>
+#include<string>
 
 #define MAX_SOCKBUF 1024
 #define MAX_WORKERTHREAD 4 //쓰레드풀에 넣을 쓰레드의 수
@@ -26,6 +27,9 @@ struct ClientInfo {
 	SOCKET cliSocket;
 	OverlappedEx RecvOverlappedEx;
 	OverlappedEx SendOverlappedEx;
+
+	double x = 0;
+	double y = 0;
 
 	ClientInfo() {
 		ZeroMemory(&RecvOverlappedEx, sizeof(OverlappedEx));
@@ -233,6 +237,8 @@ private:
 				// 완료된 IO 작업이 발생하면 IOCP Queue에서 완료된 작업을 가져와서 작업을 수행.
 				// PostQueueCompletionStatus() 함수에 의해 사용자 메세지가 도착하면 쓰레드 종료.
 
+
+
 				success = GetQueuedCompletionStatus(IOCPHandle, &dwIoSize, (PULONG_PTR)&clientinfo, &lpOverlapped, INFINITE);
 				// PULONG_PTR : CompletonKey, LPOVERLLAPED : Overlapped IO 객체
 
@@ -255,14 +261,17 @@ private:
 				if (overlappedEx->m_Operation == IOOperation::RECV) // recv 작업 결과 뒷처리
 				{
 					overlappedEx->m_Buf[dwIoSize] = NULL;
-					cout << "[수신] bytes : " << dwIoSize << " message : " << overlappedEx->m_Buf << endl;
+					cout <<"Client "<< (int)clientinfo->cliSocket << " : "<< overlappedEx->m_Buf <<"                 bytes : " << dwIoSize << endl;
 
 					SendMessage(clientinfo, overlappedEx->m_Buf, dwIoSize);
+
+					//RecevePosition(*clientinfo, overlappedEx->m_Buf);
 					BindRecv(clientinfo);
 				}
-				else if (overlappedEx->m_Operation == IOOperation::SEND)
-					cout << "[수신] bytes : " << dwIoSize << " message : " << overlappedEx->m_Buf << endl;
-				else cout << "[예외사항] : " << (int)clientinfo->cliSocket << "에서 발생함." << endl;
+				else if (overlappedEx->m_Operation == IOOperation::SEND){
+					//cout << "[send] "<< ":: ClientID:" + (int)clientinfo->cliSocket << ", bytes : " << dwIoSize << ", message : " << overlappedEx->m_Buf << endl;
+				}
+				else cout << "[예외] : " << (int)clientinfo->cliSocket << "에서 발생함." << endl;
 			}
 		}
 
@@ -294,7 +303,8 @@ private:
 
 				char clientIP[32] = { 0, };
 				inet_ntop(AF_INET, &(clientAddr.sin_addr), clientIP, 32 - 1);
-				cout << "client connect. IP : " << clientIP << " socket : " << (int)clientinfo->cliSocket << endl;
+				cout << "client connect."<<endl;
+				cout<<"IP : " << clientIP << " socket : " << (int)clientinfo->cliSocket << endl;
 				ClientCnt++;
 			}
 		}
@@ -308,6 +318,28 @@ private:
 			setsockopt(clientinfo->cliSocket, SOL_SOCKET, SO_LINGER, (char*)&stLinger, sizeof(stLinger));
 			closesocket(clientinfo->cliSocket);
 
+			for (auto it = ClientInfos.begin(); it != ClientInfos.end(); ++it) {
+				if (&(*it) == clientinfo) {
+					ClientInfos.erase(it);
+					ClientCnt--;
+					break;
+				}
+			}
+
 			clientinfo->cliSocket = INVALID_SOCKET;
+		}
+
+		void UpdateClientInfo(ClientInfo& client, double x, double y) {
+			client.x += x;
+			client.y += y;
+		}
+
+		void RecevePosition(ClientInfo& client, const string& message) {
+			size_t commaPos = message.find(',');
+			if (commaPos != string::npos) {
+				double x = stod(message.substr(0, commaPos));
+				double y = stod(message.substr(commaPos + 1));
+				UpdateClientInfo(client, x, y);
+			}
 		}
 };
