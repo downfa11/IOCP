@@ -1,42 +1,5 @@
 #pragma once
-#pragma comment(lib,"ws2_32")
-#include<WinSock2.h>
-#include<WS2tcpip.h>
-#include<iostream>
-#include<thread>
-#include<vector>
-#include<string>
-
-#define MAX_SOCKBUF 1024
-#define MAX_WORKERTHREAD 4 //쓰레드풀에 넣을 쓰레드의 수
-
-using namespace std;
-enum class IOOperation { //작업 동작의 종류
-	RECV, SEND
-};
-
-struct OverlappedEx { //WSAOVERLAPPED 구조체를 확장해서 필요한 정보를 더 넣음
-	WSAOVERLAPPED m_Overlapped; // Overlapped IO 구조체
-	SOCKET m_cliSocket;
-	WSABUF m_wsaBuf;
-	char m_Buf[MAX_SOCKBUF]; //data buffer
-	IOOperation m_Operation;
-};
-
-struct ClientInfo {
-	SOCKET cliSocket;
-	OverlappedEx RecvOverlappedEx;
-	OverlappedEx SendOverlappedEx;
-
-	double x = 0;
-	double y = 0;
-
-	ClientInfo() {
-		ZeroMemory(&RecvOverlappedEx, sizeof(OverlappedEx));
-		ZeroMemory(&SendOverlappedEx, sizeof(OverlappedEx));
-		cliSocket = INVALID_SOCKET;
-	}
-};
+#include"base.h"
 
 class IOCompletionPort {
 
@@ -78,7 +41,6 @@ public:
 			return false;
 		}
 
-		cout << "socket init success." << endl;
 		return true;
 	}
 
@@ -101,7 +63,6 @@ public:
 			return false;
 		}
 
-		cout << "server enroll success." << endl;
 		return true;
 	}
 
@@ -153,13 +114,11 @@ private:
 		for (int i = 0; i < MAX_WORKERTHREAD; i++)
 			IOWorkerThreads.emplace_back([this]() { WorkerThread(); });
 
-		cout << "WorkerThread start.." << endl;
 		return true;
 	}
 
 	bool CreateAccepterThread() {
 		mAccepterThread = thread([this]() {AccepterThread(); });
-		cout << "AccepterThread start.." << endl;
 		return true;
 	}
 
@@ -204,16 +163,20 @@ private:
 		
 		}
 
-		bool SendMessage(ClientInfo* clientinfo, char* message, int len) {
-		
+		bool SendMessage(ClientInfo* clientinfo, char* message, int len,int number) {
 			DWORD dwRecvNumBytes = 0;
 
 			CopyMemory(clientinfo->SendOverlappedEx.m_Buf, message, len);
 
-			clientinfo->SendOverlappedEx.m_wsaBuf.len = len;
+
+			memcpy(clientinfo->SendOverlappedEx.m_Buf, &number, sizeof(int));
+			memcpy(clientinfo->SendOverlappedEx.m_Buf + sizeof(int), message, len);
+
+			clientinfo->SendOverlappedEx.m_wsaBuf.len = len+sizeof(int);
 			clientinfo->SendOverlappedEx.m_wsaBuf.buf = clientinfo->SendOverlappedEx.m_Buf;
 			clientinfo->SendOverlappedEx.m_Operation = IOOperation::SEND;
-
+			cout << "send : " << message << endl;
+			
 			int ret = WSASend(clientinfo->cliSocket, &(clientinfo->SendOverlappedEx.m_wsaBuf), 1, &dwRecvNumBytes, 0,
 				(LPWSAOVERLAPPED) & (clientinfo->SendOverlappedEx), NULL);
 
@@ -261,11 +224,32 @@ private:
 				if (overlappedEx->m_Operation == IOOperation::RECV) // recv 작업 결과 뒷처리
 				{
 					overlappedEx->m_Buf[dwIoSize] = NULL;
-					cout <<"Client "<< (int)clientinfo->cliSocket << " : "<< overlappedEx->m_Buf <<"                 bytes : " << dwIoSize << endl;
 
-					SendMessage(clientinfo, overlappedEx->m_Buf, dwIoSize);
+					int packetNumber;
+					memcpy(&packetNumber, overlappedEx->m_Buf, sizeof(int));
+					int messageLength = dwIoSize - sizeof(int);
+					char* messageData = overlappedEx->m_Buf + sizeof(int);
 
-					//RecevePosition(*clientinfo, overlappedEx->m_Buf);
+
+					switch (packetNumber) {
+						case H_ECHO:
+
+							cout << "Client " << (int)clientinfo->cliSocket << " : " << messageData << "                 bytes : " << dwIoSize << endl;
+							SendMessage(clientinfo, messageData, dwIoSize,H_ECHO);
+							break;
+
+						case H_COORDINATE:
+							RecevePosition(*clientinfo, messageData);
+							break;
+
+						default:
+							cout << overlappedEx->m_Buf << endl;
+							break;
+						}
+
+					
+
+
 					BindRecv(clientinfo);
 				}
 				else if (overlappedEx->m_Operation == IOOperation::SEND){
@@ -332,6 +316,7 @@ private:
 		void UpdateClientInfo(ClientInfo& client, double x, double y) {
 			client.x += x;
 			client.y += y;
+			//cout << client.x << "," << client.y << endl;
 		}
 
 		void RecevePosition(ClientInfo& client, const string& message) {

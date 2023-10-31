@@ -1,10 +1,4 @@
 #include "IOCompletionPort.h"
-#include<iostream>
-#include<string>
-const int SERVER_PORT = 11021;
-const int MAX_CLIENT = 100; 
-
-using namespace std;
 
 
 int main() {
@@ -16,9 +10,6 @@ int main() {
 	ioCompletionPort.BindandListen(SERVER_PORT);
 
 	ioCompletionPort.StartServer(MAX_CLIENT);
-
-	cout << "아무 키나 누를 때까지 대기합니다." << endl;
-	getchar();
 
     while (1) {
        /* for (ClientInfo& client : ClientInfos) {
@@ -36,6 +27,8 @@ int main() {
         }
         else if (command == "status") {
             for (auto& cli : ioCompletionPort.ClientInfos) {
+                if (cli.cliSocket == INVALID_SOCKET)
+                    continue;
                 cout << cli.cliSocket <<"'s Position : "<<cli.x<<","<<cli.y << endl;
             }
             // 서버 상태 관련 명령 처리

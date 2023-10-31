@@ -3,9 +3,42 @@
 #include <WS2tcpip.h>
 #include <string>
 #include<thread>
-
+#include <random>
+#define N 30
 #pragma comment(lib, "ws2_32")
 
+#define H_ECHO 8282
+#define H_COORDINATE 3142
+
+void SendCoordinates(SOCKET clientSocket) {
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<int> dis(-1, 1);  // -1, 0, 1 중 하나를 랜덤으로 선택
+
+    double x = 0.0;
+    double y = 0.0;
+
+    while (true) {
+
+        x += dis(gen);
+        y += dis(gen);
+
+        std::string coordinate = std::to_string(x) + "," + std::to_string(y);
+        //std::cout << x << "," << y << std::endl;
+        int number = H_COORDINATE;
+        int packetLength = sizeof(int) + coordinate.length();
+        char* packetBuffer = new char[packetLength];
+
+        memcpy(packetBuffer, &number, sizeof(int));
+        memcpy(packetBuffer + sizeof(int), coordinate.c_str(), coordinate.length());
+        send(clientSocket, packetBuffer, packetLength, 0);
+
+        delete[] packetBuffer;
+
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+}
 
 void ClientThread() {
     WSADATA wsaData;
@@ -34,11 +67,15 @@ void ClientThread() {
     }
 
     std::cout << "Connected to the server." << std::endl;
+    double x = 0;
+    double y = 0;
     std::string message;
     char buffer[1024];
+    std::thread coordinateThread(SendCoordinates, clientSocket);
 
+    /* Echo func
     while (true) {
-        // 메시지 입력
+
         std::cout << "Enter a message (or 'exit' to quit): ";
         std::getline(std::cin, message);
 
@@ -46,16 +83,25 @@ void ClientThread() {
             break;
         }
 
-        // 메시지 전송
-        send(clientSocket, message.c_str(), message.length(), 0);
+        int number = H_ECHO;
+        int packetLength = sizeof(int) + message.length();
+        char* packetBuffer = new char[packetLength];
+
+        memcpy(packetBuffer, &number, sizeof(int));
+        memcpy(packetBuffer + sizeof(int), message.c_str(), message.length());
+        send(clientSocket, packetBuffer, packetLength, 0);
 
         // 서버로부터 응답 수신
         int bytesRead = recv(clientSocket, buffer, sizeof(buffer), 0);
-        if (bytesRead > 0) {
-            buffer[bytesRead] = '\0';
-            std::cout << "Server response: " << buffer << std::endl;
+        int packetNumber;
+        memcpy(&packetNumber, buffer, sizeof(int));
+        int messageLength = sizeof(buffer) - sizeof(int);
+        char* messageData = buffer + sizeof(int);
+        if (messageLength > 0) {
+            buffer[messageLength] = '\0';
+            std::cout << "Server response: " << messageData << std::endl;
         }
-        else if (bytesRead == 0) {
+        else if (messageData == 0) {
             std::cerr << "Connection closed by server." << std::endl;
             break;
         }
@@ -63,15 +109,25 @@ void ClientThread() {
             std::cerr << "recv() failed." << std::endl;
             break;
         }
+
+        delete[] packetBuffer;
     }
+    */
+    coordinateThread.join();
 
     closesocket(clientSocket);
     WSACleanup();
 }
 
 int main() {
-    std::thread clientThread(ClientThread);
-    clientThread.join();
+
+    std::thread clientThreads[N];
+
+    for (int i = 0; i < N; ++i)
+        clientThreads[i] = std::thread(ClientThread);
+
+    for (int i = 0; i < N; ++i)
+        clientThreads[i].join();
 
     return 0;
 }

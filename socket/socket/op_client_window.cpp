@@ -2,7 +2,7 @@
 #include<stdlib.h>
 #include<string.h>
 #include<WinSock2.h>
-#include <Ws2tcpip.h> // InetPton ÇÔ¼ö°¡ ¼±¾ðµÈ Çì´õ ÆÄÀÏ
+#include <Ws2tcpip.h> // InetPton ï¿½Ô¼ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 #pragma comment(lib, "ws2_32.lib")
 
 #define BUF_SIZE 1024
