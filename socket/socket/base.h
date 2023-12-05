@@ -12,10 +12,12 @@
 
 #define H_ECHO 8282
 #define H_COORDINATE 3142
+#define H_GETNEWBI 4910
+#define H_CONNECTION 1000
 
 using namespace std;
 
-const int SERVER_PORT = 11021;
+const int SERVER_PORT = 8080;
 const int MAX_CLIENT = 100;
 
 enum class IOOperation { //작업 동작의 종류

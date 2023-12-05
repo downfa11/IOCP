@@ -27,11 +27,12 @@ void SendCoordinates(SOCKET clientSocket) {
         std::string coordinate = std::to_string(x) + "," + std::to_string(y);
         //std::cout << x << "," << y << std::endl;
         int number = H_COORDINATE;
-        int packetLength = sizeof(int) + coordinate.length();
+        int packetLength = 2*sizeof(int) + coordinate.length();
         char* packetBuffer = new char[packetLength];
 
-        memcpy(packetBuffer, &number, sizeof(int));
-        memcpy(packetBuffer + sizeof(int), coordinate.c_str(), coordinate.length());
+        memcpy(packetBuffer, &packetLength, sizeof(int));
+        memcpy(packetBuffer + sizeof(int), &number, sizeof(int));
+        memcpy(packetBuffer + 2 * sizeof(int), coordinate.c_str(), coordinate.length());
         send(clientSocket, packetBuffer, packetLength, 0);
 
         delete[] packetBuffer;
@@ -56,7 +57,7 @@ void ClientThread() {
 
     SOCKADDR_IN serverAddr;
     serverAddr.sin_family = AF_INET;
-    serverAddr.sin_port = htons(11021);
+    serverAddr.sin_port = htons(8080);
     inet_pton(AF_INET, "127.0.0.1", &serverAddr.sin_addr);
 
     if (connect(clientSocket, (SOCKADDR*)&serverAddr, sizeof(serverAddr)) == SOCKET_ERROR) {
@@ -131,4 +132,3 @@ int main() {
 
     return 0;
 }
-

@@ -9,8 +9,8 @@ using namespace std;
 
 int main() {
 
-	int ProxyPort = 8080;
-	int SeverPort = 80;
+	int ProxyPort = 80;
+	int SeverPort = 8080;
 
 	WSAData wsadata;
 	if (WSAStartup(MAKEWORD(2, 2), &wsadata) != 0)
@@ -49,7 +49,7 @@ int main() {
             cerr << "Fail to accept the client." << endl;
         else {
 
-            char buffer[1024];
+            char buffer[2048];
             int bytesRead = recv(cliSock, buffer, sizeof(buffer), 0);
             if (bytesRead == SOCKET_ERROR) {
                 cerr << "Failed to receive data from the client." << std::endl;
@@ -74,7 +74,6 @@ int main() {
                     cerr << "Error: Connection to the server failed" << endl;
                     return 1;
                 }
-
                 send(serverSocket, request.c_str(), request.size(), 0);
                 while (true) {
                     bytesRead = recv(serverSocket, buffer, sizeof(buffer), 0);

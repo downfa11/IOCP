@@ -14,7 +14,7 @@ public:
 	{		WSACleanup();
 }
 
-	bool InitSocekt() {
+	bool InitSocket() {
 		WSAData wsaData;
 		int nRet = WSAStartup( MAKEWORD(2,2),& wsaData);
 		if (nRet != 0) {
@@ -38,14 +38,12 @@ public:
 		ServerAddr.sin_port = htons(BindPort);
 		ServerAddr.sin_addr.s_addr = htonl(INADDR_ANY);
 
-		int Ret = bind(ListenSocket, (SOCKADDR*)&ServerAddr, sizeof(SOCKADDR_IN));
-		if (Ret != 0) {
+		if (bind(ListenSocket, (SOCKADDR*)&ServerAddr, sizeof(SOCKADDR_IN)) != 0) {
 			printf("[error] bind() : %d", WSAGetLastError());
 			return false;
 		}
 
-		int Ret = listen(ListenSocket, 5);
-		if (Ret != 0) {
+		if (listen(ListenSocket, 5) != 0) {
 			printf("[error] listen() : %d", WSAGetLastError());
 			return false;
 		}
@@ -63,12 +61,10 @@ public:
 			return false;
 		}
 
-		bool Ret = CreateWorkerThread();
-		if (!Ret)
+		if (!CreateWorkerThread())
 			return false;
 
-		Ret = CreateAccepterThread();
-		if (!Ret)
+		if (!CreateAccepterThread())
 			return false;
 
 		printf("Server Started. \n");
@@ -143,6 +139,7 @@ private:
 		}
 		return nullptr;
 	}
+
 	ClientInfo* GetClientInfo(const UINT32 sessionIndex) {
 		return &ClientInfos[sessionIndex];
 	}
@@ -182,7 +179,6 @@ private:
 			//client가 접속을 끊었을때..			
 			if (FALSE == bSuccess || (0 == dwIoSize && TRUE == bSuccess))
 			{
-				printf("socket(%d) 접속 끊김\n", (int)ClientInfo->m_clisock);
 				CloseSocket(ClientInfo);
 				continue;
 			}
@@ -239,8 +235,6 @@ private:
 
 			char clientIP[32] = { 0, };
 			inet_ntop(AF_INET, &(stClientAddr.sin_addr), clientIP, 32 - 1);
-			printf("클라이언트 접속 : IP(%s) SOCKET(%d)\n", clientIP, (int)ClientInfo->m_clisock);
-
 			OnConnect(ClientInfo->GetIndex());
 
 			//클라이언트 갯수 증가
