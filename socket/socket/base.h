@@ -37,8 +37,8 @@ struct ClientInfo {
 	OverlappedEx RecvOverlappedEx;
 	OverlappedEx SendOverlappedEx;
 
-	double x = 0;
-	double y = 0;
+	int x = 0;
+	int y = 0;
 
 	ClientInfo() {
 		ZeroMemory(&RecvOverlappedEx, sizeof(OverlappedEx));

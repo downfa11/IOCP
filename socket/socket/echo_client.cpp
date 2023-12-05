@@ -67,7 +67,6 @@ void ClientThread() {
         return;
     }
 
-    std::cout << "Connected to the server." << std::endl;
     double x = 0;
     double y = 0;
     std::string message;

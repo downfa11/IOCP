@@ -337,11 +337,10 @@ private:
 		clientinfo->cliSocket = INVALID_SOCKET;
 	}
 
-	void UpdateClientInfo(ClientInfo& client, double x, double y) {
+	void UpdateClientInfo(ClientInfo& client, int x, int y) {
 		client.x = x;
 		client.y = y;
-		//cout << client.x << "," << client.y << endl;
-		string pos = to_string(client.x)+","+ to_string(client.y);
+		string pos = to_string(client.cliSocket)+"," + to_string(client.x) + "," + to_string(client.y);
 		for (auto& inst : ClientInfos)
 			if (inst.cliSocket != INVALID_SOCKET)
 				Send(&inst, &pos, pos.size(), H_COORDINATE);
