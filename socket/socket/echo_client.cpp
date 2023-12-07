@@ -16,28 +16,35 @@ void SendCoordinates(SOCKET clientSocket) {
     std::mt19937 gen(rd());
     std::uniform_int_distribution<int> dis(-1, 1);  // -1, 0, 1 중 하나를 랜덤으로 선택
 
-    double x = 0.0;
-    double y = 0.0;
+    int currentX = 0;
+    int currentY = 0;
 
     while (true) {
+        int deltaX = dis(gen);
+        int deltaY = dis(gen);
 
-        x += dis(gen);
-        y += dis(gen);
+        int newX = currentX + deltaX;
+        int newY = currentY + deltaY;
 
-        std::string coordinate = std::to_string(x) + "," + std::to_string(y);
-        //std::cout << x << "," << y << std::endl;
-        int number = H_COORDINATE;
-        int packetLength = 2*sizeof(int) + coordinate.length();
-        char* packetBuffer = new char[packetLength];
+        if (newX != currentX || newY != currentY) {
+            currentX = newX;
+            currentY = newY;
 
-        memcpy(packetBuffer, &packetLength, sizeof(int));
-        memcpy(packetBuffer + sizeof(int), &number, sizeof(int));
-        memcpy(packetBuffer + 2 * sizeof(int), coordinate.c_str(), coordinate.length());
-        send(clientSocket, packetBuffer, packetLength, 0);
+            std::string coordinate = std::to_string(currentX) + "," + std::to_string(currentY);
+            //std::cout << x << "," << y << std::endl;
+            int number = H_COORDINATE;
+            int packetLength = 2 * sizeof(int) + coordinate.length();
+            char* packetBuffer = new char[packetLength];
 
-        delete[] packetBuffer;
+            memcpy(packetBuffer, &packetLength, sizeof(int));
+            memcpy(packetBuffer + sizeof(int), &number, sizeof(int));
+            memcpy(packetBuffer + 2 * sizeof(int), coordinate.c_str(), coordinate.length());
+            send(clientSocket, packetBuffer, packetLength, 0);
 
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+            delete[] packetBuffer;
+
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+        }
     }
 }
 

@@ -165,10 +165,8 @@ private:
 
 	}
 
-	bool Send(ClientInfo* clientinfo, void* message, int len, int number) {
+	bool Send(ClientInfo* clientinfo,const void* message, int len, int number) {
 		DWORD dwRecvNumBytes = 0;
-
-		CopyMemory(clientinfo->SendOverlappedEx.m_Buf, message, len);
 
 		memcpy(clientinfo->SendOverlappedEx.m_Buf, &len, sizeof(int));
 		memcpy(clientinfo->SendOverlappedEx.m_Buf + sizeof(int), &number, sizeof(int));
@@ -178,7 +176,8 @@ private:
 		clientinfo->SendOverlappedEx.m_wsaBuf.len = len + 2 * sizeof(int);
 		clientinfo->SendOverlappedEx.m_wsaBuf.buf = clientinfo->SendOverlappedEx.m_Buf;
 		clientinfo->SendOverlappedEx.m_Operation = IOOperation::SEND;
-		// cout << number<<", send : " << message << endl;
+		//cout << number << "(size:" <<len<< ") : " << static_cast<const char*>(message) << endl;
+
 
 		int ret = WSASend(clientinfo->cliSocket, &(clientinfo->SendOverlappedEx.m_wsaBuf), 1, &dwRecvNumBytes, 0,
 			(LPWSAOVERLAPPED) & (clientinfo->SendOverlappedEx), NULL);
@@ -247,6 +246,8 @@ private:
 
 				case H_COORDINATE:
 					RecevePosition(*clientinfo, messageData);
+					syncPosition(*clientinfo, messageData, messageLength);
+
 					break;
 
 	
@@ -337,22 +338,22 @@ private:
 		clientinfo->cliSocket = INVALID_SOCKET;
 	}
 
-	void UpdateClientInfo(ClientInfo& client, int x, int y) {
-		client.x = x;
-		client.y = y;
-		string pos = to_string(client.cliSocket)+"," + to_string(client.x) + "," + to_string(client.y);
-		for (auto& inst : ClientInfos)
-			if (inst.cliSocket != INVALID_SOCKET)
-				Send(&inst, &pos, pos.size(), H_COORDINATE);
-	}
-
 	void RecevePosition(ClientInfo& client, const string& message) {
 		size_t commaPos = message.find(',');
 		if (commaPos != string::npos) {
-			double x = stod(message.substr(0, commaPos));
-			double y = stod(message.substr(commaPos + 1));
-			UpdateClientInfo(client, x, y);
+			client.x = stod(message.substr(0, commaPos));
+			client.y = stod(message.substr(commaPos + 1));
 		}
 	}
 
+	void syncPosition(ClientInfo& client, char* messageData, int messageLength) {
+
+		string socketString = to_string(client.cliSocket);
+		string fullMessage = socketString +"," + messageData;
+
+		for (auto& inst : ClientInfos) {
+			if (inst.cliSocket != INVALID_SOCKET)
+				Send(&inst, fullMessage.c_str(), fullMessage.size(), H_COORDINATE);
+		}
+	}
 };
